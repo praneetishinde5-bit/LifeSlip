@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌱Life to 🧾Receipts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Space Mono', monospace;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 2.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    body.theme-spotify {
+      background: linear-gradient(135deg, #eab308 0%, #fef08a 50%, #fefce8 100%);
+      color: #713f12;
+    }
+
+    body.theme-transactions {
+      background: linear-gradient(135deg, #10b981 0%, #a7f3d0 50%, #f0fdf4 100%);
+      color: #064e3b;
+    }
+
+    body.theme-custom {
+      background: linear-gradient(135deg, #f97316 0%, #fed7aa 50%, #fff7ed 100%);
+      color: #7c2d12;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 1.85rem;
+      color: inherit;
+    }
+
+    header p {
+      font-size: 0.9rem;
+      margin-top: 0.35rem;
+      opacity: 0.85;
+    }
+
+    .layout {
+      display: flex;
+      gap: 2rem;
+      max-width: 880px;
+      width: 100%;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .controls {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+      flex: 1;
+      min-width: 320px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(8px);
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: inherit;
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+      padding: 0.65rem 0.8rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #0f172a;
+    }
+
+    button {
+      width: 100%;
+      color: #ffffff;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .theme-spotify button {
+      background: #ca8a04;
+    }
+    .theme-spotify button:hover {
+      background: #a16207;
+    }
+
+    .theme-transactions button {
+      background: #059669;
+    }
+    .theme-transactions button:hover {
+      background: #047857;
+    }
+
+    .theme-custom button {
+      background: #ea580c;
+    }
+    .theme-custom button:hover {
+      background: #c2410c;
+    }
+
+    .receipt-container {
+      display: flex;
+      justify-content: center;
+    }
+
+    .receipt {
+      background: #ffffff;
+      color: #1e293b;
+      width: 310px;
+      padding: 1.75rem 1.4rem 2rem 1.4rem;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.15);
+      font-size: 0.8rem;
+      line-height: 1.4;
+      position: relative;
+      clip-path: polygon(
+        0% 0%, 100% 0%, 100% calc(100% - 8px),
+        95% 100%, 90% calc(100% - 8px), 85% 100%, 80% calc(100% - 8px),
+        75% 100%, 70% calc(100% - 8px), 65% 100%, 60% calc(100% - 8px),
+        55% 100%, 50% calc(100% - 8px), 45% 100%, 40% calc(100% - 8px),
+        35% 100%, 30% calc(100% - 8px), 25% 100%, 20% calc(100% - 8px),
+        15% 100%, 10% calc(100% - 8px), 5% 100%, 0% calc(100% - 8px)
+      );
+    }
+
+    .receipt-header {
+      text-align: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .receipt-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      word-break: break-word;
+      color: #0f172a;
+    }
+
+    .receipt-sub {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+    }
+
+    .divider {
+      border-top: 1px dashed #cbd5e1;
+      margin: 0.75rem 0;
+    }
+
+    .receipt-meta {
+      font-size: 0.7rem;
+      color: #475569;
+    }
+
+    .receipt-items {
+      width: 100%;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+      gap: 0.5rem;
+    }
+
+    .item-row span:first-child {
+      max-width: 200px;
+      word-break: break-word;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #0f172a;
+    }
+
+    .receipt-footer {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      color: #64748b;
+    }
+
+    .barcode {
+      margin-top: 0.5rem;
+      letter-spacing: 3px;
+      font-size: 1rem;
+      font-weight: bold;
+      white-space: nowrap;
+      color: #0f172a;
+    }
+  </style>
+</head>
+<body class="theme-spotify">
+
+  <header>
+    <h1>🌱Life to 🧾Receipts</h1>
+    <p>Turn personal digital moments into receipts.</p>
+  </header>
+
+  <div class="layout">
+    <div class="controls">
+      <div class="form-group">
+        <label>Select Preset Dataset</label>
+        <select id="datasetSelect" onchange="applyPreset()">
+          <option value="spotify">Spotify History (Tracks & Plays)</option>
+          <option value="transactions">Household Transactions (Expenses)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Upload Custom CSV</label>
+        <input type="file" id="csvFile" accept=".csv" onchange="handleCSV(event)" />
+      </div>
+
+      <div class="form-group">
+        <label>Receipt Title</label>
+        <input type="text" id="titleInput" value="SPOTIFY REPLAY 2026" oninput="updateReceipt()" />
+      </div>
+
+      <div class="form-group">
+        <label>Category / Note</label>
+        <input type="text" id="catInput" value="Top Rotations & Music Stream" oninput="updateReceipt()" />
+      </div>
+
+      <div class="form-group">
+        <label>Footer Quote</label>
+        <textarea id="quoteInput" rows="2" oninput="updateReceipt()">Thank you for keeping the rhythm alive.</textarea>
+      </div>
+
+      <button onclick="downloadReceipt()">Download Receipt (PNG)</button>
+    </div>
+
+    <div class="receipt-container">
+      <div class="receipt" id="receiptCard">
+        <div class="receipt-header">
+          <div class="receipt-title" id="rTitle">SPOTIFY REPLAY 2026</div>
+          <div class="receipt-sub" id="rCat">Top Rotations & Music Stream</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="receipt-meta">
+          <div>DATE: <span id="rDate"></span></div>
+          <div>TERMINAL: Localhost Client</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="receipt-items" id="receiptItems"></div>
+
+        <div class="divider"></div>
+
+        <div class="total-row">
+          <span id="rTotalLabel">TOTAL TIME</span>
+          <span id="rTotalVal">21.6 mins</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="receipt-footer">
+          <p id="rQuote">Thank you for keeping the rhythm alive.</p>
+          <div class="barcode">|||| | || |||| | ||||</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const spotifyData = [
+      { name: "Starboy - The Weeknd", val: "3:50 min" },
+      { name: "Blinding Lights - The Weeknd", val: "3:20 min" },
+      { name: "Midnight City - M83", val: "4:03 min" },
+      { name: "Sweater Weather - The Neighb.", val: "4:00 min" },
+      { name: "As It Was - Harry Styles", val: "2:47 min" },
+      { name: "Night Changes - 1D", val: "3:46 min" }
+    ];
+
+    const transactionData = [
+      { name: "Groceries (Supermarket)", val: "₹ 1,450" },
+      { name: "Late Night Food Delivery", val: "₹ 380" },
+      { name: "Fuel & Travel", val: "₹ 500" },
+      { name: "Monthly Electricity Bill", val: "₹ 1,120" },
+      { name: "Cafe & Snacks", val: "₹ 120" }
+    ];
+
+    document.getElementById('rDate').innerText = new Date().toLocaleDateString('en-GB');
+
+    function renderItems(items) {
+      const container = document.getElementById('receiptItems');
+      container.innerHTML = "";
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `<span>${item.name}</span><span>${item.val}</span>`;
+        container.appendChild(div);
+      });
+    }
+
+    function applyPreset() {
+      const choice = document.getElementById('datasetSelect').value;
+      if (choice === 'spotify') {
+        document.body.className = 'theme-spotify';
+        document.getElementById('titleInput').value = "SPOTIFY REPLAY 2026";
+        document.getElementById('catInput').value = "Top Rotations & Music Stream";
+        document.getElementById('quoteInput').value = "Thank you for keeping the rhythm alive.";
+        document.getElementById('rTotalLabel').innerText = "TOTAL TIME";
+        document.getElementById('rTotalVal').innerText = "21.6 mins";
+        renderItems(spotifyData);
+      } else {
+        document.body.className = 'theme-transactions';
+        document.getElementById('titleInput').value = "HOUSEHOLD EXPENSES";
+        document.getElementById('catInput').value = "Daily Transaction Log";
+        document.getElementById('quoteInput').value = "Invest in memories, not just expenses.";
+        document.getElementById('rTotalLabel').innerText = "TOTAL SPENT";
+        document.getElementById('rTotalVal').innerText = "₹ 3,570";
+        renderItems(transactionData);
+      }
+      updateReceipt();
+    }
+
+    function updateReceipt() {
+      document.getElementById('rTitle').innerText = document.getElementById('titleInput').value.toUpperCase();
+      document.getElementById('rCat').innerText = document.getElementById('catInput').value;
+      document.getElementById('rQuote').innerText = document.getElementById('quoteInput').value;
+    }
+
+    function handleCSV(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        complete: function(res) {
+          const rows = res.data.filter(r => Object.keys(r).length > 1).slice(0, 6);
+          const items = [];
+          rows.forEach(r => {
+            const keys = Object.keys(r);
+            const nameKey = keys.find(k => /track|name|item|category/i.test(k)) || keys[0];
+            const valKey = keys.find(k => /amount|cost|time|duration|score|played/i.test(k)) || keys[1];
+            if (r[nameKey]) {
+              items.push({
+                name: String(r[nameKey]).substring(0, 22),
+                val: r[valKey] ? String(r[valKey]).substring(0, 10) : "1x"
+              });
+            }
+          });
+
+          if (items.length > 0) {
+            document.body.className = 'theme-custom';
+            document.getElementById('titleInput').value = file.name.replace('.csv', '').toUpperCase().substring(0, 18);
+            document.getElementById('catInput').value = "Uploaded CSV Data";
+            document.getElementById('rTotalLabel').innerText = "ITEMS";
+            document.getElementById('rTotalVal').innerText = items.length + " logged";
+            renderItems(items);
+            updateReceipt();
+          }
+        }
+      });
+    }
+
+    function downloadReceipt() {
+      const card = document.getElementById('receiptCard');
+      html2canvas(card, { scale: 2, backgroundColor: null }).then(canvas => {
+        const a = document.createElement('a');
+        a.download = 'life-receipt.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      });
+    }
+
+    applyPreset();
+  </script>
+</body>
+</html>
